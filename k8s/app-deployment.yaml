@@ -1,56 +1,64 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: fhnw-demo
+  name: k8s-demo
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: fhnw-demo
+      app: k8s-demo
   template:
     metadata:
       labels:
-        app: fhnw-demo
+        app: k8s-demo
     spec:
       containers:
-      - name: fhnw-demo
-        image: fhnw-demo:latest
+      - name: k8s-demo
+        image: vogti/k8s-demo:latest
         ports:
         - containerPort: 8080
         env:
         - name: DB_USER
           valueFrom:
             secretKeyRef:
-              name: fhnw-demo-secrets
+              name: k8s-demo-secrets
               key: DB_USER
         - name: DB_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: fhnw-demo-secrets
+              name: k8s-demo-secrets
               key: DB_PASSWORD
         - name: DB_NAME
           valueFrom:
             secretKeyRef:
-              name: fhnw-demo-secrets
+              name: k8s-demo-secrets
               key: DB_NAME
         - name: APP_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: fhnw-demo-secrets
+              name: k8s-demo-secrets
               key: APP_PASSWORD
         - name: USE_DATABASE
           valueFrom:
             configMapKeyRef:
-              name: fhnw-demo-config
+              name: k8s-demo-config
               key: USE_DATABASE
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: NODE_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.hostIP
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: fhnw-demo
+  name: k8s-demo
 spec:
   selector:
-    app: fhnw-demo
+    app: k8s-demo
   ports:
   - protocol: TCP
     port: 80

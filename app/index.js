@@ -4,7 +4,13 @@ const WebSocket = require("ws");
 const os = require("os");
 const path = require("path");
 
-const USE_DATABASE = process.env.USE_DATABASE;
+const USE_DATABASE = process.env.USE_DATABASE === "true";
+
+if (USE_DATABASE) {
+  console.log("Running in postgres mode");
+} else {
+  console.log("Running in memory mode");
+}
 
 const persistence = USE_DATABASE ? require("./postgres") : require("./memory");
 
@@ -12,6 +18,10 @@ const app = express();
 const port = 8080;
 const PASSWORD = process.env.APP_PASSWORD; 
 
+if (!PASSWORD) {
+  console.error("ERROR: APP_PASSWORD environment variable is not set.");
+  process.exit(1);
+}
 
 app.use(express.static(path.join(__dirname, "public")));
 
@@ -63,11 +73,14 @@ app.post("/api/posts", authenticate, async (req, res) => {
 });
 
 function getNodeInfo() {
-  const hostname = os.hostname();
-  const ip = Object.values(os.networkInterfaces())
+const hostname = process.env.NODE_NAME | os.hostname();
+const pod = os.hostname();
+  const ipInterface = Object.values(os.networkInterfaces())
     .flat()
-    .find((iface) => iface.family === "IPv4" && !iface.internal).address;
-  return { hostname, ip };
+    .find((iface) => iface.family === "IPv4" && !iface.internal);
+  const podip = ipInterface ? ipInterface.address : "Unknown IP";
+  const ip = process.env.NODE_IP | podip;
+  return { hostname, ip, pod, podip };
 }
 
 const wss = new WebSocket.Server({ noServer: true });
@@ -97,7 +110,7 @@ wss.on("connection", (ws, request) => {
 });
 
 const server = app.listen(port, () => {
-  console.log(`Server running at http://localhost:${port}`);
+  console.log(`Server running at port ${port}`);
 });
 
 server.on("upgrade", (request, socket, head) => {

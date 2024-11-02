@@ -185,14 +185,14 @@
     }
 
     function updateFooter(nodeInfo) {
-      document.getElementById("footer").innerText = `Generiert von Node: ${nodeInfo.hostname} (${nodeInfo.ip})`;
+      document.getElementById("footer").innerText = `Generiert von Node: ${nodeInfo.hostname} (${nodeInfo.ip}) Pod: ${nodeInfo.pod} (${nodeInfo.podip})`;
     }
 
     function setupWebSocket() {
       const password = localStorage.getItem("authPassword");
       if (!password) return;
 
-      socket = new WebSocket(`ws://localhost:8080?password=${password}`);
+      socket = new WebSocket(`ws://${window.location.host}?password=${password}`);
 
       socket.onmessage = function (event) {
         const data = JSON.parse(event.data);
