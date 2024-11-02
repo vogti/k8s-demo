@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fhnw-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: fhnw-demo
+  template:
+    metadata:
+      labels:
+        app: fhnw-demo
+    spec:
+      containers:
+      - name: fhnw-demo
+        image: fhnw-demo:latest
+        ports:
+        - containerPort: 8080
+        env:
+        - name: DB_USER
+          valueFrom:
+            secretKeyRef:
+              name: fhnw-demo-secrets
+              key: DB_USER
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: fhnw-demo-secrets
+              key: DB_PASSWORD
+        - name: DB_NAME
+          valueFrom:
+            secretKeyRef:
+              name: fhnw-demo-secrets
+              key: DB_NAME
+        - name: APP_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: fhnw-demo-secrets
+              key: APP_PASSWORD
+        - name: USE_DATABASE
+          valueFrom:
+            configMapKeyRef:
+              name: fhnw-demo-config
+              key: USE_DATABASE
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: fhnw-demo
+spec:
+  selector:
+    app: fhnw-demo
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 8080
+  type: LoadBalancer

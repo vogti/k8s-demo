@@ -4,10 +4,14 @@ const WebSocket = require("ws");
 const os = require("os");
 const path = require("path");
 
+const USE_DATABASE = process.env.USE_DATABASE;
+
+const persistence = USE_DATABASE ? require("./postgres") : require("./memory");
+
 const app = express();
 const port = 8080;
-const PASSWORD = "fhnw"; // ToDo: Passwort aus K8s secrets laden
-const posts = []; 
+const PASSWORD = process.env.APP_PASSWORD; 
+
 
 app.use(express.static(path.join(__dirname, "public")));
 
@@ -27,6 +31,7 @@ function authenticate(req, res, next) {
   next();
 }
 
+
 // Endpoint for authentication
 app.post("/api/auth", (req, res) => {
   const { password } = req.body;
@@ -38,25 +43,24 @@ app.post("/api/auth", (req, res) => {
 });
 
 // Endpoint to retrieve all posts
-app.get("/api/posts", authenticate, (req, res) => {
-  const sortedPosts = posts.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-  res.json({ posts: sortedPosts, nodeInfo: getNodeInfo() });
+app.get("/api/posts", authenticate, async (req, res) => {
+  const posts = await persistence.getPosts();
+  res.json({ posts, nodeInfo: getNodeInfo() });
 });
 
 // Endpoint to add a post
-app.post("/api/posts", authenticate, (req, res) => {
+app.post("/api/posts", authenticate, async (req, res) => {
   const { name, content } = req.body;
   if (!name || !content) {
     return res.status(400).json({ message: "Name and content are required" });
   }
 
   const post = { name, content, timestamp: new Date() };
-  posts.unshift(post);
+  await persistence.addPost(post);
   res.json({ message: "Post created", nodeInfo: getNodeInfo() });
   
   broadcast({ post, nodeInfo: getNodeInfo() });
 });
-
 
 function getNodeInfo() {
   const hostname = os.hostname();
@@ -65,8 +69,6 @@ function getNodeInfo() {
     .find((iface) => iface.family === "IPv4" && !iface.internal).address;
   return { hostname, ip };
 }
-
-
 
 const wss = new WebSocket.Server({ noServer: true });
 
