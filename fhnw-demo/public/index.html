@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FHNW K8s Demo</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin: 0;
+      padding: 0;
+      height: 100vh;
+      background-color: #f0f0f0;
+    }
+    h1 {
+      margin-top: 20px;
+    }
+    .post-container {
+      width: 90%;
+      max-width: 600px;
+      margin-top: 20px;
+      flex-grow: 1;
+      overflow-y: auto;
+      padding-top: 1em;
+    }
+    .post {
+      padding: 10px;
+      background-color: white;
+      border: 1px solid #ddd;
+      margin-bottom: 10px;
+      transition: transform 0.3s ease;
+    }
+    .form-container {
+      display: flex;
+      flex-direction: column;
+      margin-top: 20px;
+      width: 90%;
+      max-width: 600px;
+    }
+    .form-container input, .form-container textarea {
+      padding: 10px;
+      margin: 5px 0;
+      font-size: 16px;
+    }
+    .form-container button {
+      padding: 10px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    #footer {
+      background-color: #333;
+      color: white;
+      padding: 10px;
+      font-size: 14px;
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+      text-align: center;
+    }
+    #login-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.8);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    #login-box {
+      background: white;
+      padding: 20px;
+      border-radius: 5px;
+      text-align: center;
+    }
+    #login-box input {
+      padding: 8px;
+      margin: 10px 0;
+    }
+    #login-box button {
+      padding: 8px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div id="login-overlay">
+    <div id="login-box">
+      <h2>Login</h2>
+      <p>Bitte Passwort eingeben:</p>
+      <input type="password" id="password" placeholder="Passwort">
+      <button onclick="login()">Login</button>
+      <p id="login-error" style="color:red; display:none;">Falsches Passwort!</p>
+    </div>
+  </div>
+
+  <h1>FHNW Kubernetes Demo</h1>
+
+  <div class="form-container">
+    <input type="text" id="name" placeholder="Ihr Name">
+    <textarea id="content" placeholder="Ihre Nachricht"></textarea>
+    <button onclick="postMessage()">Posten</button>
+  </div>
+
+  <div id="posts" class="post-container"></div>
+
+  <div id="footer">Lade Node-Informationen...</div>
+
+  <script>
+    let socket;
+
+    function login() {
+      const password = document.getElementById("password").value;
+      authenticate(password);
+    }
+
+    async function authenticate(password) {
+      const response = await fetch("/api/auth", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password })
+      });
+
+      if (response.ok) {
+        localStorage.setItem("authPassword", password); 
+        document.getElementById("login-overlay").style.display = "none";
+        loadPosts();
+        setupWebSocket();
+      } else {
+        document.getElementById("login-error").style.display = "block";
+      }
+    }
+
+    async function postMessage() {
+      const name = document.getElementById("name").value;
+      const content = document.getElementById("content").value;
+      const password = localStorage.getItem("authPassword");
+
+      if (!name || !content) return alert("Bitte Name und Inhalt eingeben!");
+      if (!password) return alert("Sie sind nicht authentifiziert!");
+
+      const response = await fetch("/api/posts", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${password}`
+        },
+        body: JSON.stringify({ name, content })
+      });
+
+      const result = await response.json();
+      updateFooter(result.nodeInfo);
+      document.getElementById("content").value = "";
+    }
+
+    async function loadPosts() {
+      const password = localStorage.getItem("authPassword");
+      if (!password) return alert("Sie sind nicht authentifiziert!");
+
+      const response = await fetch("/api/posts", {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${password}`
+        }
+      });
+
+      const result = await response.json();
+      const posts = result.posts;
+      const postsContainer = document.getElementById("posts");
+
+      postsContainer.innerHTML = "";
+      posts.forEach(post => {
+        const postElement = document.createElement("div");
+        postElement.classList.add("post");
+        postElement.innerHTML = `<strong>${post.name}:</strong> ${post.content}`;
+        postsContainer.prepend(postElement);
+        postElement.style.transform = "translateY(-10px)";
+      });
+
+      updateFooter(result.nodeInfo);
+    }
+
+    function updateFooter(nodeInfo) {
+      document.getElementById("footer").innerText = `Generiert von Node: ${nodeInfo.hostname} (${nodeInfo.ip})`;
+    }
+
+    function setupWebSocket() {
+      const password = localStorage.getItem("authPassword");
+      if (!password) return;
+
+      socket = new WebSocket(`ws://localhost:8080?password=${password}`);
+
+      socket.onmessage = function (event) {
+        const data = JSON.parse(event.data);
+        const post = data.post;
+        const postsContainer = document.getElementById("posts");
+        const postElement = document.createElement("div");
+        postElement.classList.add("post");
+        postElement.innerHTML = `<strong>${post.name}:</strong> ${post.content}`;
+        postsContainer.prepend(postElement);
+        postElement.style.transform = "translateY(-10px)";
+
+        updateFooter(data.nodeInfo);
+      };
+    }
+
+    window.onload = () => {
+      if (localStorage.getItem("authPassword")) {
+        loadPosts();
+        setupWebSocket();
+        document.getElementById("login-overlay").style.display = "none";
+      }
+    };
+  </script>
+</body>
+</html>
