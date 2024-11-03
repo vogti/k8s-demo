@@ -73,13 +73,13 @@ app.post("/api/posts", authenticate, async (req, res) => {
 });
 
 function getNodeInfo() {
-const hostname = process.env.NODE_NAME | os.hostname();
+const hostname = process.env.NODE_NAME || os.hostname();
 const pod = os.hostname();
   const ipInterface = Object.values(os.networkInterfaces())
     .flat()
     .find((iface) => iface.family === "IPv4" && !iface.internal);
   const podip = ipInterface ? ipInterface.address : "Unknown IP";
-  const ip = process.env.NODE_IP | podip;
+  const ip = process.env.NODE_IP || podip;
   return { hostname, ip, pod, podip };
 }
 

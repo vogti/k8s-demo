@@ -1,0 +1,45 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: init-db-job
+spec:
+  template:
+    spec:
+      containers:
+      - name: init-db
+        image: postgres:17
+        env:
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              name: k8s-demo-secrets
+              key: DB_USER
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: k8s-demo-secrets
+              key: DB_PASSWORD
+        - name: POSTGRES_DB
+          valueFrom:
+            secretKeyRef:
+              name: k8s-demo-secrets
+              key: DB_NAME
+        command:
+          - sh
+          - -c
+          - |
+              export PGPASSWORD=$POSTGRES_PASSWORD;
+              until psql -h postgres -U $POSTGRES_USER -d $POSTGRES_DB -c "select 1" > /dev/null 2>&1; do
+                echo "Waiting for PostgreSQL to be ready...";
+                sleep 2;
+              done;
+              echo "PostgreSQL is ready, initializing database...";
+              psql -h postgres -U $POSTGRES_USER -d $POSTGRES_DB -f /docker-entrypoint-initdb.d/init.sql
+        volumeMounts:
+        - name: init-db-sql
+          mountPath: /docker-entrypoint-initdb.d
+      restartPolicy: OnFailure
+      volumes:
+      - name: init-db-sql
+        configMap:
+          name: db-init-sql

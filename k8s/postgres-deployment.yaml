@@ -12,30 +12,6 @@ spec:
       labels:
         app: postgres
     spec:
-      initContainers:
-      - name: init-db
-        image: postgres:17
-        env:
-        - name: POSTGRES_USER
-          valueFrom:
-            secretKeyRef:
-              name: k8s-demo-secrets
-              key: DB_USER
-        - name: POSTGRES_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: k8s-demo-secrets
-              key: DB_PASSWORD
-        - name: POSTGRES_DB
-          valueFrom:
-            secretKeyRef:
-              name: k8s-demo-secrets
-              key: DB_NAME
-        command: ['sh', '-c', 'psql -U $POSTGRES_USER -d $POSTGRES_DB -f /docker-entrypoint-initdb.d/init.sql']
-        volumeMounts:
-        - name: init-db-sql
-          mountPath: /docker-entrypoint-initdb.d
-      
       containers:
       - name: postgres
         image: postgres:17
@@ -59,8 +35,7 @@ spec:
               key: DB_NAME
         volumeMounts:
         - name: postgres-data
-          mountPath: /var/lib/postgresql/data
-      
+          mountPath: /var/lib/postgresql/data      
       volumes:
       - name: postgres-data
         emptyDir: {} 
@@ -81,7 +56,6 @@ data:
       content TEXT NOT NULL,
       timestamp TIMESTAMPTZ NOT NULL
     );
-
 ---
 apiVersion: v1
 kind: Service
