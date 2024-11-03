@@ -4,15 +4,21 @@ const WebSocket = require("ws");
 const os = require("os");
 const path = require("path");
 
-const USE_DATABASE = process.env.USE_DATABASE === "true";
+const PERSISTENCE_TYPE = process.env.PERSISTENCE_TYPE;
+let persistence;
 
-if (USE_DATABASE) {
-  console.log("Running in postgres mode");
+if (PERSISTENCE_TYPE === "database") {
+    persistence = require("./postgres");
+    console.log("Running in postgres mode");
+} else if (PERSISTENCE_TYPE === "file") {
+    persistence = require("./file");
+    console.log("Running in file mode");
+} else if (PERSISTENCE_TYPE === "memory") {
+    persistence = require("./memory");
+    console.log("Running in memory mode");
 } else {
-  console.log("Running in memory mode");
+   console.error("ERROR: Unknown persistence implementation: " + PERSISTENCE_TYPE)
 }
-
-const persistence = USE_DATABASE ? require("./postgres") : require("./memory");
 
 const app = express();
 const port = 8080;

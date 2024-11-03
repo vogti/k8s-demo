@@ -3,4 +3,4 @@ kind: ConfigMap
 metadata:
   name: k8s-demo-config
 data:
-  USE_DATABASE: "false"
+  PERSISTENCE_TYPE: "memory"
