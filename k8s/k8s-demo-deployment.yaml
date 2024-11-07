@@ -12,11 +12,18 @@ spec:
       labels:
         app: k8s-demo
     spec:
+    volumes:
+     - name: hostpath-volume
+       hostPath:
+         path: /data/example
       containers:
       - name: k8s-demo
         image: vogti/k8s-demo:latest
         ports:
         - containerPort: 8080
+        volumeMounts:
+        - name: hostpath-volume
+          mountPath: "/usr/src/app/data"
         env:
         - name: PERSISTENCE_TYPE
           value: "memory"
