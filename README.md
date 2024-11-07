@@ -37,15 +37,7 @@ This repository contains a demo application designed to illustrate Kubernetes co
      --from-literal=APP_PASSWORD=your-app-password
    ```
 
-2. **Deploy Persistent Volume (Optional)**:
-
-   If using file-based persistence, apply the Persistent Volume configuration:
-
-   ```bash
-   kubectl apply -f k8s/file-storage.yaml
-   ```
-
-3. **Deploy Postgres (Optional)**:
+2. **Deploy Postgres (Optional)**:
 
    If using postgres-based persistence, apply the postgres-deployment configuration:
 
@@ -54,7 +46,7 @@ This repository contains a demo application designed to illustrate Kubernetes co
    kubectl apply -f k8s/init-db-job.yaml
    ```
 
-4. **Deploy Application and Ingress**:
+3. **Deploy Application and Ingress**:
 
    Apply the Kubernetes deployment and Ingress configurations:
 
