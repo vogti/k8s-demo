@@ -1,6 +1,0 @@
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: k8s-demo-config
-data:
-  PERSISTENCE_TYPE: "memory"
