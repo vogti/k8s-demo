@@ -1,7 +1,7 @@
 const posts = [];
 
 async function getPosts() {
-  return posts.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+  return posts.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
 }
 
 async function addPost(post) {

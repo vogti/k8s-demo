@@ -9,7 +9,7 @@ if (!fs.existsSync(filePath)) {
 
 function readPosts() {
     const fileData = fs.readFileSync(filePath, "utf8");
-    return JSON.parse(fileData);
+    return JSON.parse(fileData).sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
 }
 
 function writePosts(posts) {
