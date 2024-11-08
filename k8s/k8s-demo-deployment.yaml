@@ -12,10 +12,10 @@ spec:
       labels:
         app: k8s-demo
     spec:
-    volumes:
-     - name: hostpath-volume
-       hostPath:
-         path: /data/example
+      volumes:
+      - name: hostpath-volume
+        hostPath:
+          path: "/data/example"
       containers:
       - name: k8s-demo
         image: vogti/k8s-demo:latest
@@ -27,6 +27,19 @@ spec:
         env:
         - name: PERSISTENCE_TYPE
           value: "memory"
+        - name: APP_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: k8s-demo-secrets
+              key: APP_PASSWORD
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: NODE_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.hostIP
         - name: DB_USER
           valueFrom:
             secretKeyRef:
@@ -42,16 +55,3 @@ spec:
             secretKeyRef:
               name: k8s-demo-secrets
               key: DB_NAME
-        - name: APP_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: k8s-demo-secrets
-              key: APP_PASSWORD
-        - name: NODE_NAME
-          valueFrom:
-            fieldRef:
-              fieldPath: spec.nodeName
-        - name: NODE_IP
-          valueFrom:
-            fieldRef:
-              fieldPath: status.hostIP
