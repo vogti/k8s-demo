@@ -23,8 +23,9 @@
       max-width: 600px;
       margin-top: 20px;
       flex-grow: 1;
-      overflow-y: auto;
+      /*overflow-y: auto;*/
       padding-top: 1em;
+      padding-bottom: 3em;
     }
     .post {
       padding: 10px;
@@ -111,7 +112,9 @@
   <div id="footer">Lade Node-Informationen...</div>
 
   <script>
+    const USE_WEBSOCKET = true;  // Toggle this to false for Polling mode
     let socket;
+    let intervalId;
 
     function login() {
       const password = document.getElementById("password").value;
@@ -129,7 +132,7 @@
         localStorage.setItem("authPassword", password); 
         document.getElementById("login-overlay").style.display = "none";
         loadPosts();
-        setupWebSocket();
+        setupConnection();
       } else {
         document.getElementById("login-error").style.display = "block";
       }
@@ -155,6 +158,10 @@
       const result = await response.json();
       updateFooter(result.nodeInfo);
       document.getElementById("content").value = "";
+
+      if (!USE_WEBSOCKET) {
+        setTimeout(loadPosts, 200);
+      }
     }
 
     async function loadPosts() {
@@ -188,6 +195,14 @@
       document.getElementById("footer").innerText = `Generiert von Node: ${nodeInfo.hostname} (${nodeInfo.ip}) Pod: ${nodeInfo.pod} (${nodeInfo.podip})`;
     }
 
+    function setupConnection() {
+      if (USE_WEBSOCKET) {
+        setupWebSocket();
+      } else {
+        startPolling();
+      }
+    }
+
     function setupWebSocket() {
       const password = localStorage.getItem("authPassword");
       if (!password) return;
@@ -197,23 +212,47 @@
       socket.onmessage = function (event) {
         const data = JSON.parse(event.data);
         const post = data.post;
-        const postsContainer = document.getElementById("posts");
-        const postElement = document.createElement("div");
-        postElement.classList.add("post");
-        postElement.innerHTML = `<strong>${post.name}:</strong> ${post.content}`;
-        postsContainer.prepend(postElement);
-        postElement.style.transform = "translateY(-10px)";
-
-        updateFooter(data.nodeInfo);
+        if (post) {
+          const postsContainer = document.getElementById("posts");
+          const postElement = document.createElement("div");
+          postElement.classList.add("post");
+          postElement.innerHTML = `<strong>${post.name}:</strong> ${post.content}`;
+          postsContainer.prepend(postElement);
+          postElement.style.transform = "translateY(-10px)";
+        
+          updateFooter(data.nodeInfo);
+        }
       };
+
+      socket.onclose = function () {
+        console.log("WebSocket disconnected. Reconnecting...");
+        setTimeout(setupWebSocket, 1000);  // Reconnect with a delay if WebSocket closes
+      };
+    }
+
+    function startPolling() {
+      intervalId = setInterval(async () => {
+        await loadPosts();
+      }, 1000); // Poll every second
+    }
+
+    function stopPolling() {
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
     }
 
     window.onload = () => {
       if (localStorage.getItem("authPassword")) {
         loadPosts();
-        setupWebSocket();
+        setupConnection();
         document.getElementById("login-overlay").style.display = "none";
       }
+    };
+
+    window.onunload = () => {
+      stopPolling();
+      if (socket) socket.close();
     };
   </script>
 </body>

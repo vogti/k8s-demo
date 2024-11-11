@@ -75,7 +75,9 @@ app.post("/api/posts", authenticate, async (req, res) => {
   await persistence.addPost(post);
   res.json({ message: "Post created", nodeInfo: getNodeInfo() });
   
-  broadcast({ post, nodeInfo: getNodeInfo() });
+  if (PERSISTENCE_TYPE !== "database") {
+    broadcast({ post, nodeInfo: getNodeInfo() });
+  }
 });
 
 function getNodeInfo() {
@@ -88,6 +90,7 @@ const pod = os.hostname();
   const ip = process.env.NODE_IP || podip;
   return { hostname, ip, pod, podip };
 }
+global.getNodeInfo = getNodeInfo;
 
 const wss = new WebSocket.Server({ noServer: true });
 
@@ -98,6 +101,7 @@ function broadcast(data) {
     }
   });
 }
+global.broadcast = broadcast;
 
 wss.on("connection", (ws, request) => {
   const url = new URL(request.url, `http://${request.headers.host}`);
