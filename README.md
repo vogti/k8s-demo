@@ -7,9 +7,6 @@ This repository contains a demo application designed to illustrate Kubernetes co
 
 - **Web-based Forum**: A simple forum where users can post messages.
 - **Persistence Options**: Data storage can be configured to use in-memory storage, file storage, or PostgreSQL.
-- **Automatic Scaling**: Kubernetes manages the scaling of application replicas.
-- **Load Balancing**: The app demonstrates load balancing across multiple instances of the application.
-- **Stateful Storage**: Supports persistent storage through Persistent Volumes in Kubernetes.
 - **Node Identification**: Displays the node name and IP address that processed each request, useful for load balancing demos.
 - **Authentication**: Simple password-protected access to the forum.
 
