@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -91,27 +91,73 @@
 <body>
   <div id="login-overlay">
     <div id="login-box">
-      <h2>Login</h2>
-      <p>Bitte Passwort eingeben:</p>
-      <input type="password" id="password" placeholder="Passwort">
-      <button onclick="login()">Login</button>
-      <p id="login-error" style="color:red; display:none;">Falsches Passwort!</p>
+      <h2 id="login-title"></h2>
+      <p id="login-prompt"></p>
+      <input type="password" id="password" placeholder="">
+      <button id="login-button" onclick="login()"></button>
+      <p id="login-error" style="color:red; display:none;"></p>
     </div>
   </div>
 
-  <h1>Kubernetes Demo</h1>
+  <h1 id="demo-title"></h1>
 
   <div class="form-container">
-    <input type="text" id="name" placeholder="Ihr Name">
-    <textarea id="content" placeholder="Ihre Nachricht"></textarea>
-    <button onclick="postMessage()">Posten</button>
+    <input type="text" id="name" placeholder="">
+    <textarea id="content" placeholder=""></textarea>
+    <button id="post-button" onclick="postMessage()"></button>
   </div>
 
   <div id="posts" class="post-container"></div>
 
-  <div id="footer">Lade Node-Informationen...</div>
+  <div id="footer"></div>
 
   <script>
+    // Define translations for German (de) and English (en)
+    const translations = {
+      de: {
+        loginTitle: "Login",
+        loginPrompt: "Bitte Passwort eingeben:",
+        loginError: "Falsches Passwort!",
+        namePlaceholder: "Ihr Name",
+        contentPlaceholder: "Ihre Nachricht",
+        postButton: "Posten",
+        footerLoading: "Lade Node-Informationen...",
+        demoTitle: "Kubernetes Demo"
+      },
+      en: {
+        loginTitle: "Login",
+        loginPrompt: "Please enter your password:",
+        loginError: "Wrong password!",
+        namePlaceholder: "Your Name",
+        contentPlaceholder: "Your Message",
+        postButton: "Post",
+        footerLoading: "Loading Node Information...",
+        demoTitle: "Kubernetes Demo"
+      }
+    };
+
+    // Detect browser language (default to English unless it starts with "de")
+    const browserLang = navigator.language || navigator.userLanguage;
+    const lang = browserLang.startsWith("de") ? "de" : "en";
+    document.documentElement.lang = lang;
+
+    // Apply translations to the page
+    function applyTranslations() {
+      const texts = translations[lang];
+      document.getElementById("login-title").textContent = texts.loginTitle;
+      document.getElementById("login-prompt").textContent = texts.loginPrompt;
+      document.getElementById("login-error").textContent = texts.loginError;
+      document.getElementById("password").placeholder = texts.loginPrompt;
+      document.getElementById("name").placeholder = texts.namePlaceholder;
+      document.getElementById("content").placeholder = texts.contentPlaceholder;
+      document.getElementById("post-button").textContent = texts.postButton;
+      document.getElementById("demo-title").textContent = texts.demoTitle;
+      document.getElementById("footer").textContent = texts.footerLoading;
+      document.getElementById("login-button").textContent = texts.loginTitle;
+    }
+
+    applyTranslations();
+
     const USE_WEBSOCKET = true;  // Toggle this to false for Polling mode
     let socket;
     let intervalId;
@@ -143,8 +189,8 @@
       const content = document.getElementById("content").value;
       const password = localStorage.getItem("authPassword");
 
-      if (!name || !content) return alert("Bitte Name und Inhalt eingeben!");
-      if (!password) return alert("Sie sind nicht authentifiziert!");
+      if (!name || !content) return alert(lang === "de" ? "Bitte Name und Inhalt eingeben!" : "Please enter your name and message!");
+      if (!password) return alert(lang === "de" ? "Sie sind nicht authentifiziert!" : "You are not authenticated!");
 
       const response = await fetch("/api/posts", {
         method: "POST",
@@ -166,7 +212,7 @@
 
     async function loadPosts() {
       const password = localStorage.getItem("authPassword");
-      if (!password) return alert("Sie sind nicht authentifiziert!");
+      if (!password) return alert(lang === "de" ? "Sie sind nicht authentifiziert!" : "You are not authenticated!");
 
       const response = await fetch("/api/posts", {
         method: "GET",
@@ -192,7 +238,11 @@
     }
 
     function updateFooter(nodeInfo) {
-      document.getElementById("footer").innerText = `Generiert von Node: ${nodeInfo.hostname} (${nodeInfo.ip}) Pod: ${nodeInfo.pod} (${nodeInfo.podip})`;
+      if (lang === "de") {
+        document.getElementById("footer").innerText = `Generiert von Node: ${nodeInfo.hostname} (${nodeInfo.ip}) Pod: ${nodeInfo.pod} (${nodeInfo.podip})`;
+      } else {
+        document.getElementById("footer").innerText = `Generated by Node: ${nodeInfo.hostname} (${nodeInfo.ip}) Pod: ${nodeInfo.pod} (${nodeInfo.podip})`;
+      }
     }
 
     function setupConnection() {
