@@ -1,5 +1,5 @@
 {
-  "name": "fhnw-demo",
+  "name": "k8s-demo",
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
